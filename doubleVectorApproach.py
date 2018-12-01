@@ -8,6 +8,8 @@ from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn import linear_model
+from xgboost import XGBClassifier
+from xgboost import XGBRegressor
 from sklearn import tree
 import csv
 
@@ -34,13 +36,17 @@ users = pd.read_csv('users.csv')
 # y = rating
 
 # Creates a vector for each user with the following features
-# [avgStars, numReviews]
+# [avgStars, numReviews, fans, useful, funny, cool]
 def createUserDict():
     userDict = {}
     for index, row in users.iterrows():
         avgStars = row['average_stars']
         numReviews = row['review_count']
-        userDict[row['user_id']] = [avgStars, numReviews]
+        fans = row['fans']
+        useful = row['useful']
+        funny = row['funny']
+        cool = row['cool']
+        userDict[row['user_id']] = [avgStars, numReviews, fans, useful, funny, cool]
     return userDict
 
 # Creates a vector for each business with the following features
@@ -63,7 +69,7 @@ def createTrainingSet():
 	    newVector = uv + bv
 	    yTrain.append(row['stars'])
 	    xTrain.append(newVector)
-	return xTrain, yTrain
+	return np.asarray(xTrain), np.asarray(yTrain)
 
 ########################################################################################
 # Create Test Set
@@ -99,17 +105,20 @@ models = []
 #models.append(KNeighborsClassifier())
 #models.append(RandomForestClassifier())
 #models.append(tree.DecisionTreeClassifier())
-models.append(linear_model.LogisticRegression())
+#models.append(linear_model.LogisticRegression())
+models.append(XGBRegressor())
 
 for model in models:
 	model.fit(xTrain, yTrain)
 	testPreds = model.predict(xTest)
-	print "Test accuracy of the model is: {0}".format(np.mean(testPreds == yTest))
+	print "Test accuracy of the model is: {0}".format(np.mean(np.round(testPreds) == yTest))
 
 ########################################################################################
 # Get Predictions for Kaggle Test Set
 
 def createKaggleCSV():
+	model = XGBRegressor()
+	model.fit(xTrain, yTrain)
 	kagglePreds = model.predict(kaggleTest)
 
 	df1 = pd.DataFrame({'labels': kagglePreds})
@@ -127,4 +136,4 @@ def createKaggleCSV():
 	    writer.writerows(firstRow)
 	    writer.writerows(results)
 
-#createKaggleCSV()
+createKaggleCSV()
