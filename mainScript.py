@@ -1,3 +1,25 @@
+########################################################################################
+'''
+Group Name: The Least Squares (ID #12)
+Members: Adit Deshpande, Elena Escalas, Nina Maller, Allen Miyazawa, Kai Wong
+
+This is our top level CS 145 project python script. Our project is structured such 
+that the 4 algorithms we use are located in different files that we load in. 
+
+- vectorMLModels.py: Python script 
+- avgBusinessRating.py: Python script that outputs that average business rating for 
+each of the examples in test_queries.
+- 
+
+All of these scripts will output a result.csv file that contains the predictions for 
+the respective models that are used. 
+
+Sample Usage:
+	python ___
+'''
+
+########################################################################################
+# All Imports
 import numpy as np
 import pandas as pd
 from sklearn import linear_model
@@ -12,6 +34,10 @@ from xgboost import XGBClassifier
 from xgboost import XGBRegressor
 from sklearn import tree
 import csv
+import sys
+
+from vectorMLModels import createKaggleCSV_vectorML
+from avgBusinessRating import createKaggleCSV_avgRating
 
 ########################################################################################
 # Load in CSVs
@@ -85,6 +111,17 @@ def createTestSet():
 	return xTest
 
 ########################################################################################
+# Helper Functions
+
+# Returns just the average rating of the business in question
+def getAverageRating(testPairs):
+	avgRating = []
+	for index, row in testPairs.iterrows():
+		bv = businessDict[row['business_id']]
+		avgRating.append(bv[0])
+	return np.asarray(avgRating)
+
+########################################################################################
 # Create Datasets
 
 print "Creating the user dictionary"
@@ -94,10 +131,13 @@ businessDict = createBusinessDict()
 print "Creating the training set"
 X, Y = createTrainingSet()
 xTrain, xTest, yTrain, yTest = train_test_split(X, Y)
+print "Creating the testing set"
 kaggleTest = createTestSet()
 
 ########################################################################################
 # Create Models
+# This section is for testing out our models on our own test/train split and observing 
+# the results. 
 
 models = []
 #models.append(tree.DecisionTreeClassifier())
@@ -106,7 +146,7 @@ models = []
 #models.append(RandomForestClassifier())
 #models.append(tree.DecisionTreeClassifier())
 #models.append(linear_model.LogisticRegression())
-models.append(XGBRegressor())
+#models.append(XGBRegressor())
 
 for model in models:
 	model.fit(xTrain, yTrain)
@@ -116,24 +156,16 @@ for model in models:
 ########################################################################################
 # Get Predictions for Kaggle Test Set
 
-def createKaggleCSV():
-	model = XGBRegressor()
-	model.fit(xTrain, yTrain)
-	kagglePreds = model.predict(kaggleTest)
+finalModels = ['Similarity', 'Linear Regression', 'Average Rating', 'Gradient Boosted Regression Tree']
+# You can change this!!
+modelToUse = finalModels[2]
 
-	df1 = pd.DataFrame({'labels': kagglePreds})
-	kagglePreds = df1['labels'].tolist()
-	results = [[0 for x in range(2)] for x in range(len(kagglePreds))]
-	for index in range(0,len(kagglePreds)):
-	    results[index][0] = int(index)
-	    results[index][1] = kagglePreds[index]
-
-	firstRow = [[0 for x in range(2)] for x in range(1)]
-	firstRow[0][0] = 'index'
-	firstRow[0][1] = 'stars'
-	with open("result.csv", "wb") as f:
-	    writer = csv.writer(f)
-	    writer.writerows(firstRow)
-	    writer.writerows(results)
-
-createKaggleCSV()
+if modelToUse == 'Similarity':
+	# TODO
+	pass
+elif modelToUse == 'Linear Regression':
+	createKaggleCSV(X, Y, kaggleTest, linear_model.LogisticRegression())
+elif modelToUse == 'Average Rating':
+	createKaggleCSV_avgRating(businessPd, testPairs)
+else:
+	createKaggleCSV(X, Y, kaggleTest, XGBRegressor())
