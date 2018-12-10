@@ -10,6 +10,7 @@ businessPd = pd.read_csv("data/business.csv")
 trainReviews = pd.read_csv("new_train_reviews.csv")
 old_testPairs = pd.read_csv("data/test_queries.csv")
 new_testPairs = pd.read_csv('new_test_queries.csv')
+old_testMatrix = np.load("previousKaggleTest.npy")
 
 def format_id(id):
     if id[0] == '-':
@@ -78,11 +79,10 @@ def createTestSet():
     total_num_old = len(old_testPairs)
     assert(total_num_new == total_num_old)
 
-    for index, row in old_testPairs.iterrows():
-        print("Generating test pair {0}/{1}".format(index+1, total_num_old), end="\r")
+    new_testMatrix = []
 
-        uv = userDict[row['user_id']]
-        bv = businessDict[row['business_id']]
+    for index, row in enumerate(old_testMatrix):
+        print("Generating test pair {0}/{1}".format(index+1, total_num_old), end="\r")
 
         new_row = new_testPairs.iloc[index]
 
@@ -90,10 +90,12 @@ def createTestSet():
         avg_stars_given = new_row['avg_stars_given']
         avg_stars_received = new_row['avg_stars_received']
 
-        # Concatenate uv and bv
-        newVector = uv + bv + [sim_score] + [avg_stars_given] + [avg_stars_received]
-        xTest.append(newVector)
-    return xTest
+        extra = [sim_score, avg_stars_given, avg_stars_received]
+        newVec = list(row) + extra
+
+        new_testMatrix.append(newVec)
+
+    return np.asarray(new_testMatrix)
 
 print("Creating the user dictionary")
 userDict = createUserDict()
