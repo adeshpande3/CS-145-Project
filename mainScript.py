@@ -14,6 +14,7 @@ from xgboost import XGBRegressor
 from sklearn import tree
 import csv
 import sys
+import Similarity_Preprocessing as sp
 
 from vectorMLModels import createKaggleCSV_vectorML
 from avgBusinessRating import createKaggleCSV_avgRating
@@ -125,10 +126,13 @@ if loadIn == "y":
 else:
 	print("Creating training and testing matrices")
 	if simScore == "y":
-		pass
-		# TODO @Kai could you modify the functions in the Simlarity Preprocessing folder
-		# such that you can basically call them from here and get the X, Y, and kaggleTest
-		# matrices?
+		# Warning: IDs may not be valid across all data files, please consider cleaning your data first.
+		sp.gen_biz_reviews.main("data/business.csv", "reviews_by_business.csv")
+		sp.gen_user_reviews.main("data/users.csv", "reviews_by_users.csv")
+		sp.gen_new_train_reviews.main("data/train_reviews.csv", "new_train_reviews.csv")
+		sp.gen_new_test.main("data/test_queries.csv", "new_test_queries.csv", "data/business.csv")
+		X, Y, kaggleTest = sp.gen_numpy_files.main("data/users.csv", "data/business.csv", "data/test_queries.csv", "Precomputed Matrices/previousKaggleTest.npy")
+		
 	else:	
 		print "Creating the user dictionary"
 		userDict = createUserDict()
