@@ -4,6 +4,7 @@ import csv
 import code
 
 def createKaggleCSV_avgRating(businessPd, testPairs):
+	print ("Creating Kaggle predictions!")
 	with open('result.csv', 'w', newline='') as output:
 	    testWriter = csv.writer(output, quotechar='|', quoting=csv.QUOTE_MINIMAL)
 	    testWriter.writerow(['index'] + ['stars'])

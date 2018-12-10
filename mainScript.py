@@ -1,24 +1,3 @@
-########################################################################################
-'''
-Group Name: The Least Squares (ID #12)
-Members: Adit Deshpande, Elena Escalas, Nina Maller, Allen Miyazawa, Kai Wong
-
-This is our top level CS 145 project python script. Our project is structured such 
-that the 4 algorithms we use are located in different files that we load in. 
-
-- vectorMLModels.py: Python script 
-- avgBusinessRating.py: Python script that outputs that average business rating for 
-each of the examples in test_queries.
-- 
-
-All of these scripts will output a result.csv file that contains the predictions for 
-the respective models that are used. 
-
-Sample Usage:
-	python ___
-'''
-
-########################################################################################
 # All Imports
 import numpy as np
 import pandas as pd
@@ -43,15 +22,15 @@ from avgBusinessRating import createKaggleCSV_avgRating
 # Load in CSVs
 
 # Contains info about each business
-businessPd = pd.read_csv("business.csv")
+businessPd = pd.read_csv("data/business.csv")
 # Contains two columns, one with the test id and the other with the predictions
-sampleSub = pd.read_csv('sample_submission.csv')
+sampleSub = pd.read_csv('data/sample_submission.csv')
 # Contains two columns, one with the business id and the other with the user id
-testPairs = pd.read_csv('test_queries.csv')
+testPairs = pd.read_csv('data/test_queries.csv')
 # Contains info about past reviews
-trainReviews = pd.read_csv('train_reviews.csv')
+trainReviews = pd.read_csv('data/train_reviews.csv')
 # Contains info about the ratings that users have given in the past
-users = pd.read_csv('users.csv')
+users = pd.read_csv('data/users.csv')
 
 ########################################################################################
 # Create Training Set
@@ -122,17 +101,45 @@ def getAverageRating(testPairs):
 	return np.asarray(avgRating)
 
 ########################################################################################
-# Create Datasets
+# Create/Loading in Datasets
 
-print "Creating the user dictionary"
-userDict = createUserDict()
-print "Creating the business dictionary"
-businessDict = createBusinessDict()
-print "Creating the training set"
-X, Y = createTrainingSet()
+print("\n#############################################################################")
+print ("\nHello! If you'd like to run this code, you can either choose to load in \
+precomputed matrices for X, Y, and XTest. Or you can choose to create new ones \
+using our preprocessing functions. You also have the choice of including or not \
+including our similarity score features. \n")
+
+loadIn = raw_input("Do you want to load in precomputed training and testing matrices (y/n)?")
+simScore = raw_input("Do you want to include the similarity score features (y/n)?")
+modelChoice = raw_input("Which model (1 - AvgRating, 2 - LogReg, 3 - GBRT)?")
+if loadIn == "y":
+	print("Loading training and testing matrices")
+	if simScore == "y":
+		X = np.load('Precomputed Matrices/similarity_score_xTrain.npy')
+		Y = np.load('Precomputed Matrices/similarity_score_yTrain.npy')
+		kaggleTest = np.load('Precomputed Matrices/similarity_score_kaggleTest.npy')
+	else:
+		X = np.load('Precomputed Matrices/original_xTrain.npy')
+		Y = np.load('Precomputed Matrices/original_yTrain.npy')
+		kaggleTest = np.load('Precomputed Matrices/original_kaggleTest.npy')
+else:
+	print("Creating training and testing matrices")
+	if simScore == "y":
+		pass
+		# TODO @Kai could you modify the functions in the Simlarity Preprocessing folder
+		# such that you can basically call them from here and get the X, Y, and kaggleTest
+		# matrices?
+	else:	
+		print "Creating the user dictionary"
+		userDict = createUserDict()
+		print "Creating the business dictionary"
+		businessDict = createBusinessDict()
+		print "Creating the training set"
+		X, Y = createTrainingSet()
+		print "Creating the testing set"
+		kaggleTest = createTestSet()
+
 xTrain, xTest, yTrain, yTest = train_test_split(X, Y)
-print "Creating the testing set"
-kaggleTest = createTestSet()
 
 ########################################################################################
 # Create Models
@@ -156,16 +163,24 @@ for model in models:
 ########################################################################################
 # Get Predictions for Kaggle Test Set
 
-finalModels = ['Similarity', 'Linear Regression', 'Average Rating', 'Gradient Boosted Regression Tree']
-# You can change this!!
-modelToUse = finalModels[2]
-
-if modelToUse == 'Similarity':
-	# TODO
-	pass
-elif modelToUse == 'Linear Regression':
-	createKaggleCSV(X, Y, kaggleTest, linear_model.LogisticRegression())
-elif modelToUse == 'Average Rating':
+if modelChoice == "2":
+	# Logistic Regression!
+	# Testing our model on our held out section of the Kaggle training data
+	model = linear_model.LogisticRegression()
+	model.fit(xTrain, yTrain)
+	testPreds = model.predict(xTest)
+	print "Validation accuracy of the model is: {0}".format(np.mean(np.round(testPreds) == yTest))
+	# Creating our Kaggle predictions
+	createKaggleCSV_vectorML(X, Y, kaggleTest, linear_model.LogisticRegression())
+elif modelChoice == "1":
+	# Average Rating!
 	createKaggleCSV_avgRating(businessPd, testPairs)
 else:
-	createKaggleCSV(X, Y, kaggleTest, XGBRegressor())
+	# Gradient Boosted Regression Tree!
+	# Testing our model on our held out section of the Kaggle training data
+	model = XGBRegressor()
+	model.fit(xTrain, yTrain)
+	testPreds = model.predict(xTest)
+	print "Validation accuracy of the model is: {0}".format(np.mean(np.round(testPreds) == yTest))
+	# Creating our Kaggle predictions
+	createKaggleCSV_vectorML(X, Y, kaggleTest, XGBRegressor())

@@ -5,13 +5,16 @@ from xgboost import XGBRegressor
 from sklearn import linear_model
 
 def createKaggleCSV_vectorML(xTrain, yTrain, kaggleTest, model):
+	print ("Creating Kaggle predictions!")
 	model.fit(xTrain, yTrain)
 	modelPreds = model.predict(kaggleTest)
 	kagglePreds = modelPreds
-
 	# If you want to average the preds
 	#averageRatingPreds = getAverageRating(testPairs)
 	#kagglePreds = [sum(x) / 2 for x in zip(modelPreds, averageRatingPreds)]
+
+	# Threshold the predictions if they go above/below the rating boundaries
+	kagglePreds = np.clip(kagglePreds, 1, 5)
 
 	df1 = pd.DataFrame({'labels': kagglePreds})
 	kagglePreds = df1['labels'].tolist()
